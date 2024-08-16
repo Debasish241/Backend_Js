@@ -160,7 +160,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
-    req.user._id,
+    req.user?._id,
     {
       $set: {
         refreshToken: undefined,
@@ -264,7 +264,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const user = User.findByIdAndUpdate(
+  const user =await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -293,7 +293,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error uploading avatar to cloudinary");
   }
 
-  await User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -302,6 +302,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "avatar image updated"));
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
@@ -314,18 +317,22 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
   if (!coverImage.url) {
-    throw new ApiError(400, "Error uploading avatar to cloudinary");
+    throw new ApiError(400, "Error uploading cover image to cloudinary");
   }
 
-  await User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
-        avatar: avatar.url,
+        coverImage: coverImage.url,
       },
     },
     { new: true }
   ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "cover image updated"));
 });
 
 export {
@@ -339,6 +346,5 @@ export {
   updateUserAvatar,
   updateUserCoverImage,
 };
-
 
 //2.11.27
